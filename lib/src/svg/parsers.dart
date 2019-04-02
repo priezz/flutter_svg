@@ -106,7 +106,8 @@ Matrix4 parseTransform(String transform) {
 
     final MatrixParser transformer = _matrixParsers[command];
     if (transformer == null) {
-      throw StateError('Unsupported transform: $command');
+      // throw StateError('Unsupported transform: $command');
+      continue;
     }
 
     result = transformer(params, result);
