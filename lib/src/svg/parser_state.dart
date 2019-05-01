@@ -81,8 +81,12 @@ class _Elements {
       viewBox,
       <Drawable>[],
       parserState._definitions,
-      parseStyle(parserState.attributes, parserState._definitions,
-          viewBox.viewBoxRect, null),
+      parseStyle(
+        parserState.attributes,
+        parserState._definitions,
+        viewBox.viewBoxRect,
+        null,
+      ),
     );
     parserState.addGroup(parserState._currentStartElement, parserState._root);
     return null;
@@ -470,7 +474,9 @@ class _Elements {
         lastTextInfo = textInfos.last;
       }
       final Offset currentOffset = _parseCurrentOffset(
-          parserState, lastTextInfo?.offset?.translate(lastTextWidth, 0));
+        parserState,
+        lastTextInfo?.offset?.translate(lastTextWidth, 0),
+      );
       textInfos.add(_TextInfo(
         parseStyle(
           parserState.attributes,
@@ -478,6 +484,7 @@ class _Elements {
           parserState.rootBounds,
           lastTextInfo?.style ?? parserState.currentGroup.style,
           needsTransform: true,
+          multiplyTransformByParent: lastTextInfo != null,
         ),
         currentOffset,
       ));
@@ -640,11 +647,11 @@ class SvgParserState {
         if (getAttribute(event.attributes, 'display') == 'none' ||
             getAttribute(event.attributes, 'visibility') == 'hidden') {
           print('SVG Warning: Discarding:\n\n  $event\n\n'
-                'and any children it has since it is not visible.\n'
-                'If that element is meant to be visible, the `display` or '
-                '`visibility` attributes should be removed.\n'
-                'If that element is not meant to be visible, it would be better '
-                'to remove it from the SVG file.');
+              'and any children it has since it is not visible.\n'
+              'If that element is meant to be visible, the `display` or '
+              '`visibility` attributes should be removed.\n'
+              'If that element is not meant to be visible, it would be better '
+              'to remove it from the SVG file.');
           if (!event.isSelfClosing) {
             depth += 1;
             _discardSubtree();

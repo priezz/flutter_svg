@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'dart:ui';
 
 import 'package:path_drawing/path_drawing.dart';
@@ -174,11 +175,16 @@ DrawablePaint parseStroke(
   DrawablePaint parentStroke,
 ) {
   final String rawStroke = getAttribute(attributes, 'stroke');
-  final String rawOpacity = getAttribute(attributes, 'stroke-opacity');
-
-  final double opacity = rawOpacity == ''
-      ? parentStroke?.color?.opacity ?? 1.0
-      : parseDouble(rawOpacity).clamp(0.0, 1.0);
+  final String rawStrokeOpacity = getAttribute(
+    attributes,
+    'stroke-opacity',
+    def: '1.0',
+  );
+  final String rawOpacity = getAttribute(attributes, 'opacity');
+  double opacity = parseDouble(rawStrokeOpacity).clamp(0.0, 1.0);
+  if (rawOpacity != '') {
+    opacity *= parseDouble(rawOpacity).clamp(0.0, 1.0);
+  }
 
   if (rawStroke.startsWith('url')) {
     return _getDefinitionPaint(
@@ -236,11 +242,12 @@ DrawablePaint parseFill(
   DrawablePaint parentFill,
 ) {
   final String rawFill = getAttribute(el, 'fill');
-  final String rawOpacity = getAttribute(el, 'fill-opacity');
-
-  final double opacity = rawOpacity == ''
-      ? parentFill?.color?.opacity ?? 1.0
-      : parseDouble(rawOpacity).clamp(0.0, 1.0);
+  final String rawFillOpacity = getAttribute(el, 'fill-opacity', def: '1.0');
+  final String rawOpacity = getAttribute(el, 'opacity');
+  double opacity = parseDouble(rawFillOpacity).clamp(0.0, 1.0);
+  if (rawOpacity != '') {
+    opacity *= parseDouble(rawOpacity).clamp(0.0, 1.0);
+  }
 
   if (rawFill.startsWith('url')) {
     return _getDefinitionPaint(
@@ -338,14 +345,28 @@ DrawableStyle parseStyle(
   Rect bounds,
   DrawableStyle parentStyle, {
   bool needsTransform = false,
+  bool multiplyTransformByParent = false,
 }) {
-  final Matrix4 transform = needsTransform
-      ? parseTransform(getAttribute(attributes, 'transform'))
-      : null;
-
+  Float64List rawTransform;
+  if (needsTransform) {
+    final Matrix4 transform = parseTransform(
+      getAttribute(attributes, 'transform'),
+    );
+    if (multiplyTransformByParent && parentStyle?.transform != null) {
+      if (transform == null) {
+        rawTransform = parentStyle.transform;
+      } else {
+        rawTransform = Matrix4.fromFloat64List(parentStyle.transform)
+            .multiplied(transform)
+            .storage;
+      }
+    } else {
+      rawTransform = transform?.storage;
+    }
+  }
   return DrawableStyle.mergeAndBlend(
     parentStyle,
-    transform: transform?.storage,
+    transform: rawTransform,
     stroke: parseStroke(attributes, bounds, definitions, parentStyle?.stroke),
     dashArray: parseDashArray(attributes),
     dashOffset: parseDashOffset(attributes),
