@@ -183,7 +183,7 @@ class _Elements {
     final DrawableStyleable ref =
         parserState._definitions.getDrawable('url($xlinkHref)');
     final DrawableGroup group = DrawableGroup(
-      <Drawable>[ref.mergeStyle(style)],
+      <Drawable>[ref?.mergeStyle(style)],
       style,
       transform: transform.storage,
     );

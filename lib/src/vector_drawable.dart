@@ -570,7 +570,7 @@ class DrawableDefinitionServer {
       <String, DrawableStyleable>{};
 
   /// Attempt to lookup a [Drawable] by [id].
-  DrawableStyleable getDrawable(String id, {bool nullOk = false}) {
+  DrawableStyleable getDrawable(String id, {bool nullOk = true}) {
     assert(id != null);
     final DrawableStyleable value = _drawables[id];
     if (value == null && nullOk != true) {
