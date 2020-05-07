@@ -2,6 +2,7 @@ pubspec.lock
 .DS_Store
 .atom/
 .dart_tool/
+.history/
 .idea
 .vscode/
 .packages

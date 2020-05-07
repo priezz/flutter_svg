@@ -7,7 +7,7 @@ const String kXlinkNamespace = 'http://www.w3.org/1999/xlink';
 ///
 /// SVG 1.1 specifies that these attributes should be in the xlink namespace.
 /// SVG 2 deprecates that namespace.
-String getHrefAttribute(List<XmlEventAttribute> attributes) => getAttribute(
+String getHrefAttribute(List<XmlElementAttribute> attributes) => getAttribute(
       attributes,
       'href',
       namespace: kXlinkNamespace,
@@ -19,7 +19,7 @@ String getHrefAttribute(List<XmlEventAttribute> attributes) => getAttribute(
 ///
 /// Will look to the style first if it can.
 String getAttribute(
-  List<XmlEventAttribute> el,
+  List<XmlElementAttribute> el,
   String name, {
   String def = '',
   String namespace,
@@ -53,14 +53,14 @@ String getAttribute(
 }
 
 String _getAttribute(
-  List<XmlEventAttribute> list,
+  List<XmlElementAttribute> list,
   String localName, {
   String def = '',
   String namespace,
 }) {
   return list
           .firstWhere(
-              (XmlEventAttribute attr) =>
+              (XmlElementAttribute attr) =>
                   attr.name.replaceFirst('${attr.namespacePrefix}:', '') ==
                   localName,
               orElse: () => null)
