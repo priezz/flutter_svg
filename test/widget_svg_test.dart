@@ -13,7 +13,6 @@ import 'package:mockito/mockito.dart';
 Future<void> _checkWidgetAndGolden(Key key, String filename) async {
   final Finder widgetFinder = find.byKey(key);
   expect(widgetFinder, findsOneWidget);
-
   await expectLater(widgetFinder, matchesGoldenFile('golden_widget/$filename'));
 }
 
@@ -59,7 +58,7 @@ void main() {
     </g>
 </svg>''';
 
-  final Uint8List svg = utf8.encode(svgStr);
+  final Uint8List svgBytes = utf8.encode(svgStr) as Uint8List;
 
   testWidgets('SvgPicture can work with a FittedBox',
       (WidgetTester tester) async {
@@ -178,7 +177,7 @@ void main() {
         child: RepaintBoundary(
           key: key,
           child: SvgPicture.memory(
-            svg,
+            svgBytes,
           ),
         ),
       ),
@@ -218,15 +217,18 @@ void main() {
 
     final GlobalKey key = GlobalKey();
     await tester.pumpWidget(
-      MediaQuery(
-        data: MediaQueryData.fromWindow(window),
-        child: DefaultAssetBundle(
-          bundle: mockAsset,
-          child: RepaintBoundary(
-            key: key,
-            child: SvgPicture.asset(
-              'test.svg',
-              semanticsLabel: 'Test SVG',
+      Directionality(
+        textDirection: TextDirection.ltr,
+        child: MediaQuery(
+          data: MediaQueryData.fromWindow(window),
+          child: DefaultAssetBundle(
+            bundle: mockAsset,
+            child: RepaintBoundary(
+              key: key,
+              child: SvgPicture.asset(
+                'test.svg',
+                semanticsLabel: 'Test SVG',
+              ),
             ),
           ),
         ),
@@ -247,18 +249,22 @@ void main() {
       .thenAnswer((_) => Future<MockHttpClientResponse>.value(mockResponse));
 
   when(mockResponse.transform<Uint8List>(any))
-      .thenAnswer((_) => Stream<Uint8List>.fromIterable(<Uint8List>[svg]));
+      .thenAnswer((_) => Stream<Uint8List>.fromIterable(<Uint8List>[svgBytes]));
   when(mockResponse.listen(any,
           onDone: anyNamed('onDone'),
           onError: anyNamed('onError'),
           cancelOnError: anyNamed('cancelOnError')))
       .thenAnswer((Invocation invocation) {
-    final void Function(Uint8List) onData = invocation.positionalArguments[0];
-    final void Function(Object) onError = invocation.namedArguments[#onError];
-    final void Function() onDone = invocation.namedArguments[#onDone];
-    final bool cancelOnError = invocation.namedArguments[#cancelOnError];
+    final void Function(Uint8List) onData =
+        invocation.positionalArguments[0] as void Function(Uint8List);
+    final void Function(Object) onError =
+        invocation.namedArguments[#onError] as void Function(Object);
+    final VoidCallback onDone =
+        invocation.namedArguments[#onDone] as VoidCallback;
+    final bool cancelOnError =
+        invocation.namedArguments[#cancelOnError] as bool;
 
-    return Stream<Uint8List>.fromIterable(<Uint8List>[svg]).listen(
+    return Stream<Uint8List>.fromIterable(<Uint8List>[svgBytes]).listen(
       onData,
       onDone: onDone,
       onError: onError,
@@ -379,6 +385,66 @@ void main() {
 
     expect(find.byType(Semantics), findsNothing);
   }, semanticsEnabled: true);
+
+  testWidgets('SvgPicture colorFilter - flutter logo',
+      (WidgetTester tester) async {
+    final GlobalKey key = GlobalKey();
+    await tester.pumpWidget(
+      RepaintBoundary(
+        key: key,
+        child: SvgPicture.string(
+          svgStr,
+          width: 100.0,
+          height: 100.0,
+          color: const Color(0xFF990000),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    await _checkWidgetAndGolden(key, 'flutter_logo.string.color_filter.png');
+  });
+
+  testWidgets('SvgPicture colorFilter with text', (WidgetTester tester) async {
+    const String svgData =
+        '''<svg font-family="arial" font-size="14" height="160" width="88" xmlns="http://www.w3.org/2000/svg">
+  <g stroke="#000" stroke-linecap="round" stroke-width="2" stroke-opacity="1" fill-opacity="1" stroke-linejoin="miter">
+    <g>
+      <line x1="60" x2="88" y1="136" y2="136"/>
+    </g>
+    <g>
+      <text stroke-width="1" x="9" y="28">2</text>
+    </g>
+    <g>
+      <text stroke-width="1" x="73" y="156">1</text>
+    </g>
+  </g>
+</svg>''';
+    final GlobalKey key = GlobalKey();
+    await tester.pumpWidget(
+      RepaintBoundary(
+        key: key,
+        child: SvgPicture.string(
+          svgData,
+          width: 100.0,
+          height: 100.0,
+          color: const Color(0xFF990000),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    await _checkWidgetAndGolden(key, 'text_color_filter.png');
+  }, skip: !isLinux);
+
+  testWidgets('Nested SVG elements report a FlutterError',
+      (WidgetTester tester) async {
+    await svg.fromSvgString(
+        '<svg viewBox="0 0 166 202"><svg viewBox="0 0 166 202"></svg></svg>',
+        'test');
+    final UnsupportedError error = tester.takeException() as UnsupportedError;
+    expect(error.message, 'Unsupported nested <svg> element.');
+  });
 }
 
 class MockAssetBundle extends Mock implements AssetBundle {}

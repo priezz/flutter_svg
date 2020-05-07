@@ -1,5 +1,87 @@
 # CHANGES
 
+## 0.17.4
+
+- Allow `precachePicture` to take `null` for a `BuildContext`.
+- Provide a clearer error message when nested `<svg>` elements are used.
+
+## 0.17.3+1
+
+- Fixed regression in v0.17.3 for shape elements with no explicit fill but
+  explicit opacity.
+
+## 0.17.3
+
+- Be more permissive about whitespace in transform attributes.
+- Stop defaulting color to black when not present, fixing issue with colors
+  carried over from `use` elements.
+
+## 0.17.2
+
+- Bumped minimum Flutter version to 1.6.7 to pick up DiagnosticableMixin.
+- Allow more variations of whitespace in base64 encoded image data.
+
+## 0.17.1
+
+- Fix for issue with `use` elements refering to groups or other `use` elements
+  not correctly applying styles.
+
+## 0.17.0
+
+- Make ColorFiltering apply to whole layer instead of per paint operation.
+- **BREAKING** Remove `colorFilter` parameter from `VectorDrawable.draw`.
+- Fix color filtering for text.
+
+## 0.16.1
+
+- Support `image` tags in `defs`.
+- Make `DrawableRasterImage` implement `DrawableStyleable`.
+
+## 0.16.0
+
+- Move `transform` out of `DrawableStyle` and onto `DrawableStyleable`. Shapes
+  already worked this way, and the transform logic was handled in a confusingly
+  different way than all the other style attributes.
+- Support `<use/>` elements having `id`s.
+- Properly apply transforms to referenced use eleemnts.
+
+## 0.15.0
+
+- Respect transformations on `<image/>` tags.
+- Be more tolerant of malformed base64 data, similar to browsers (specifically,
+  having spaces present in the data). ## 0.14.4
+- Apply masks in the correct order when blend modes are involved in shapes.
+
+## 0.14.4
+
+- Support for masks on groups.
+- Update example project to Android X.
+
+## 0.14.3
+
+- Support for the `mix-blend-mode` attribute.
+
+## 0.14.2
+
+- Format, open up obtainKey for testing.
+
+## 0.14.1
+
+- Support for HSL colors (thanks to [@christianalfoni](https://github.com/christianalfoni))
+
+## 0.14.0
+
+- Added support for masks (thanks to [@krispypen](https://github.com/krispypen))
+- Allow for clearing of the picture cache
+
+## 0.13.1
+
+- Fix case where color filters were incorrectly getting created.
+
+## 0.13.0+2
+
+- Same fix for group opacity/saveLayer as in 0.12.4+2
+
 ## 0.13.0+1
 
 - Bump path_drawing dependency, which includes bug fixes in parsing.
@@ -9,6 +91,15 @@
 - Updated SDK constraint to support new error message formats
 - Updated error message formats
 - Misc. updates for new SDK features
+
+## 0.12.4+2
+
+- Changed version constraint to prevent pulling down from wrong flutter version.
+- Fixed group opacity/saveLayer bug.
+
+## 0.12.4+1
+
+- Bump dep on path_drawing which contains bugfixes for parsing.
 
 ## 0.12.4
 

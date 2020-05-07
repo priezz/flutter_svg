@@ -28,7 +28,7 @@ Basic usage (to create an SVG rendering widget from an asset):
 
 ```dart
 final String assetName = 'assets/image.svg';
-final Widget svg = new SvgPicture.asset(
+final Widget svg = SvgPicture.asset(
   assetName,
   semanticsLabel: 'Acme Logo'
 );
@@ -38,7 +38,7 @@ You can color/tint the image like so:
 
 ```dart
 final String assetName = 'assets/up_arrow.svg';
-final Widget svgIcon = new SvgPicture.asset(
+final Widget svgIcon = SvgPicture.asset(
   assetName,
   color: Colors.red,
   semanticsLabel: 'A red up arrow'
@@ -57,14 +57,14 @@ parsing/loading (normally only relevant for network access).
 ```dart
 // Will print error messages to the console.
 final String assetName = 'assets/image_that_does_not_exist.svg';
-final Widget svg = new SvgPicture.asset(
+final Widget svg = SvgPicture.asset(
   assetName,
 );
 
-final Widget networkSvg = new SvgPicture.network(
+final Widget networkSvg = SvgPicture.network(
   'https://site-that-takes-a-while.com/image.svg',
   semanticsLabel: 'A shark?!',
-  placeholderBuilder: (BuildContext context) => new Container(
+  placeholderBuilder: (BuildContext context) => Container(
       padding: const EdgeInsets.all(30.0),
       child: const CircularProgressIndicator()),
 );
@@ -144,6 +144,11 @@ of something that's broken.
 - Foreign elements
 - Rendering properties/hints
 
+## Recommended Adobe Illustrator SVG Configuration
+- In Styling: choose Presentation Attributes instead of Inline CSS because CSS is not fully supported.
+- In Images: choose Embded not Linked to other file to get a single svg with no dependency to other files.
+- In Objects IDs: choose layer names to add every layer name to svg tags or you can use minimal,it is optional.
+![Export configuration](https://user-images.githubusercontent.com/2842459/62599914-91de9c00-b8fe-11e9-8fb7-4af57d5100f7.png)
 ## SVG sample attribution
 
 SVGs in `/assets/w3samples` pulled from [W3 sample files](https://dev.w3.org/SVG/tools/svgweb/samples/svg-files/)

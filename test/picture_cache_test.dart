@@ -53,6 +53,25 @@ void main() {
       ),
     );
     expect(PictureProvider.cacheCount, 2);
+
+    PictureProvider.clearCache();
+    expect(PictureProvider.cacheCount, 0);
+  });
+
+  testWidgets('Precache - null context', (WidgetTester tester) async {
+    const String svgString = '''<svg viewBox="0 0 10 10">
+<rect x="1" y="1" width="5" height="5" fill="black" />
+</svg>''';
+
+    expect(PictureProvider.cacheCount, 0);
+    await precachePicture(
+      StringPicture(
+        SvgPicture.svgStringDecoder,
+        svgString,
+      ),
+      null,
+    );
+    expect(PictureProvider.cacheCount, 1);
   });
 
   testWidgets('Precache with error', (WidgetTester tester) async {

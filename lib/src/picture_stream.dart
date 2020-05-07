@@ -50,10 +50,10 @@ class PictureInfo {
     if (other.runtimeType != runtimeType) {
       return false;
     }
-    final PictureInfo typedOther = other;
-    return typedOther.picture == picture &&
-        typedOther.viewport == viewport &&
-        typedOther.size == size;
+    return other is PictureInfo &&
+        other.picture == picture &&
+        other.viewport == viewport &&
+        other.size == size;
   }
 }
 
@@ -85,7 +85,7 @@ typedef PictureListener = Function(PictureInfo image, bool synchronousCall);
 ///
 ///  * [PictureProvider], which has an example that includes the use of an
 ///    [PictureStream] in a [Widget].
-class PictureStream extends Diagnosticable {
+class PictureStream with DiagnosticableMixin {
   /// Create an initially unbound image stream.
   ///
   /// Once an [PictureStreamCompleter] is available, call [setCompleter].
@@ -189,7 +189,7 @@ class PictureStream extends Diagnosticable {
 /// [PictureStreamListener] objects are rarely constructed directly. Generally, an
 /// [PictureProvider] subclass will return an [PictureStream] and automatically
 /// configure it with the right [PictureStreamCompleter] when possible.
-abstract class PictureStreamCompleter extends Diagnosticable {
+abstract class PictureStreamCompleter with DiagnosticableMixin {
   final List<_PictureListenerPair> _listeners = <_PictureListenerPair>[];
   PictureInfo _current;
 
@@ -242,16 +242,18 @@ abstract class PictureStreamCompleter extends Diagnosticable {
         if (listenerPair.errorListener != null) {
           listenerPair.errorListener(exception, stack);
         } else {
-          _handleImageError(ErrorDescription('by a picture listener'), exception, stack);
+          _handleImageError(
+              ErrorDescription('by a picture listener'), exception, stack);
         }
       }
     }
   }
 
-  void _handleImageError(DiagnosticsNode context, dynamic exception, dynamic stack) {
+  void _handleImageError(
+      DiagnosticsNode context, dynamic exception, dynamic stack) {
     FlutterError.reportError(FlutterErrorDetails(
       exception: exception,
-      stack: stack,
+      stack: stack as StackTrace,
       library: 'SVG',
       context: context,
     ));
