@@ -881,25 +881,15 @@ class SvgParserState {
   /// `<style/>`, `<title/>`, and `<desc/>` elements.
   void unhandledElement(XmlStartElementEvent event) {
     if (event.name == 'style') {
-      FlutterError.reportError(FlutterErrorDetails(
-        exception: UnimplementedError(
-            'The <style> element is not implemented in this library.'),
-        informationCollector: () sync* {
-          yield ErrorDescription(
-              'Style elements are not supported by this library and the requested SVG may not '
-              'render as intended.');
-          yield ErrorHint(
-              'If possible, ensure the SVG uses inline styles and/or attributes (which are '
-              'supported), or use a preprocessing utility such as svgcleaner to inline the '
-              'styles for you.');
-          yield ErrorDescription('');
-          yield DiagnosticsProperty<String>('Picture key', _key);
-        },
-        library: 'SVG',
-        context: ErrorDescription('in parseSvgElement'),
-      ));
+      print(
+        '[flutter_svg] The <style> element is not implemented in this library. '
+        'Ensure the SVG uses inline styles and/or supported attributes '
+        'or use a preprocessing utility such as svgcleaner to inline the styles. '
+        'Picture key: $_key',
+      );
     } else if (_unhandledElements.add(event.name)) {
-      print('unhandled element ${event.name}; Picture key: $_key');
+      print(
+          '[flutter_svg] Unhandled element ${event.name}; Picture key: $_key');
     }
   }
 }
