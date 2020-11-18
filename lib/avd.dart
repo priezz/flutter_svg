@@ -1,5 +1,4 @@
 // ignore_for_file: public_member_api_docs
-import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:ui' show Picture;
@@ -75,22 +74,28 @@ class Avd {
         .map((XmlElement child) => parseAvdElement(child, viewBox.viewBoxRect))
         .toList();
     // todo : style on root
-    return DrawableRoot(viewBox, children, DrawableDefinitionServer(), null);
+    return DrawableRoot(getAttribute(svg.attributes, 'id', def: ''), viewBox,
+        children, DrawableDefinitionServer(), null);
   }
 }
 
 /// Extends [VectorDrawableImage] to parse SVG data to [Drawable].
 class AvdPicture extends SvgPicture {
-  const AvdPicture(PictureProvider pictureProvider,
-      {Key key,
-      bool matchTextDirection = false,
-      bool allowDrawingOutsideViewBox = false,
-      WidgetBuilder placeholderBuilder})
-      : super(pictureProvider,
-            key: key,
-            matchTextDirection: matchTextDirection,
-            allowDrawingOutsideViewBox: allowDrawingOutsideViewBox,
-            placeholderBuilder: placeholderBuilder);
+  const AvdPicture(
+    PictureProvider pictureProvider, {
+    Key key,
+    bool matchTextDirection = false,
+    bool allowDrawingOutsideViewBox = false,
+    WidgetBuilder placeholderBuilder,
+    ColorFilter colorFilter,
+  }) : super(
+          pictureProvider,
+          key: key,
+          matchTextDirection: matchTextDirection,
+          allowDrawingOutsideViewBox: allowDrawingOutsideViewBox,
+          placeholderBuilder: placeholderBuilder,
+          colorFilter: colorFilter,
+        );
 
   AvdPicture.string(String bytes,
       {bool matchTextDirection = false,
@@ -101,11 +106,12 @@ class AvdPicture extends SvgPicture {
       Key key})
       : this(
             StringPicture(
-                allowDrawingOutsideViewBox == true
-                    ? avdStringDecoderOutsideViewBox
-                    : avdStringDecoder,
-                bytes,
-                colorFilter: _getColorFilter(color, colorBlendMode)),
+              allowDrawingOutsideViewBox == true
+                  ? avdStringDecoderOutsideViewBox
+                  : avdStringDecoder,
+              bytes,
+            ),
+            colorFilter: _getColorFilter(color, colorBlendMode),
             matchTextDirection: matchTextDirection,
             allowDrawingOutsideViewBox: allowDrawingOutsideViewBox,
             placeholderBuilder: placeholderBuilder,
@@ -122,13 +128,14 @@ class AvdPicture extends SvgPicture {
       BlendMode colorBlendMode = BlendMode.srcIn})
       : this(
             ExactAssetPicture(
-                allowDrawingOutsideViewBox == true
-                    ? avdStringDecoderOutsideViewBox
-                    : avdStringDecoder,
-                assetName,
-                bundle: bundle,
-                package: package,
-                colorFilter: _getColorFilter(color, colorBlendMode)),
+              allowDrawingOutsideViewBox == true
+                  ? avdStringDecoderOutsideViewBox
+                  : avdStringDecoder,
+              assetName,
+              bundle: bundle,
+              package: package,
+            ),
+            colorFilter: _getColorFilter(color, colorBlendMode),
             matchTextDirection: matchTextDirection,
             allowDrawingOutsideViewBox: allowDrawingOutsideViewBox,
             placeholderBuilder: placeholderBuilder,
@@ -162,5 +169,6 @@ DrawableRoot fromAvdString(String rawSvg, Rect size) {
       .map((XmlElement child) => parseAvdElement(child, size))
       .toList();
   // todo : style on root
-  return DrawableRoot(viewBox, children, DrawableDefinitionServer(), null);
+  return DrawableRoot(getAttribute(svg.attributes, 'id', def: ''), viewBox,
+      children, DrawableDefinitionServer(), null);
 }

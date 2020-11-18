@@ -1,14 +1,13 @@
 name: flutter_svg_example
 description: An SVG samnple app.
-author: Dan Field <dfield@gmail.com>
 homepage: https://github.com/dnfield/flutter_svg
-version: 0.0.1
+publish_to: none
 
 dependencies:
-  flutter_svg:
-    path: ../
   flutter:
     sdk: flutter
+  flutter_svg:
+    path: ../
 
 # For information on the generic Dart part of this file, see the
 # following page: https://www.dartlang.org/tools/pub/pubspec

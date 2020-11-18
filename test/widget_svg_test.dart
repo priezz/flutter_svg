@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' show window;
 
+import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -59,6 +60,32 @@ void main() {
 </svg>''';
 
   final Uint8List svgBytes = utf8.encode(svgStr) as Uint8List;
+
+  testWidgets('SvgPicture does not invalidate the cache when color changes',
+      (WidgetTester tester) async {
+    expect(PictureProvider.cacheCount, 0);
+    await tester.pumpWidget(
+      SvgPicture.string(
+        svgStr,
+        width: 100.0,
+        height: 100.0,
+        color: const Color(0xFF990000),
+      ),
+    );
+
+    expect(PictureProvider.cacheCount, 1);
+
+    await tester.pumpWidget(
+      SvgPicture.string(
+        svgStr,
+        width: 100.0,
+        height: 100.0,
+        color: const Color(0xFF990099),
+      ),
+    );
+
+    expect(PictureProvider.cacheCount, 1);
+  });
 
   testWidgets('SvgPicture can work with a FittedBox',
       (WidgetTester tester) async {
@@ -145,6 +172,47 @@ void main() {
     await _checkWidgetAndGolden(key, 'stick_figure.withclipping.png');
   });
 
+  testWidgets('SvgPicture.string ltr', (WidgetTester tester) async {
+    final GlobalKey key = GlobalKey();
+    await tester.pumpWidget(
+      MediaQuery(
+        data: MediaQueryData.fromWindow(window),
+        child: RepaintBoundary(
+          key: key,
+          child: Directionality(
+            textDirection: TextDirection.ltr,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: <Widget>[
+                Expanded(
+                  child: Container(
+                    color: const Color(0xFF0D47A1),
+                    height: 100.0,
+                  ),
+                ),
+                SvgPicture.string(
+                  svgStr,
+                  matchTextDirection: true,
+                  height: 100.0,
+                  width: 100.0,
+                ),
+                Expanded(
+                  child: Container(
+                    color: const Color(0xFF42A5F5),
+                    height: 100.0,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    await _checkWidgetAndGolden(key, 'flutter_logo.string.ltr.png');
+  });
+
   testWidgets('SvgPicture.string rtl', (WidgetTester tester) async {
     final GlobalKey key = GlobalKey();
     await tester.pumpWidget(
@@ -154,11 +222,28 @@ void main() {
           key: key,
           child: Directionality(
             textDirection: TextDirection.rtl,
-            child: SvgPicture.string(
-              svgStr,
-              matchTextDirection: true,
-              width: 100.0,
-              height: 100.0,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: <Widget>[
+                Expanded(
+                  child: Container(
+                    color: const Color(0xFF0D47A1),
+                    height: 100.0,
+                  ),
+                ),
+                SvgPicture.string(
+                  svgStr,
+                  matchTextDirection: true,
+                  height: 100.0,
+                  width: 100.0,
+                ),
+                Expanded(
+                  child: Container(
+                    color: const Color(0xFF42A5F5),
+                    height: 100.0,
+                  ),
+                ),
+              ],
             ),
           ),
         ),
@@ -275,6 +360,7 @@ void main() {
   testWidgets('SvgPicture.network', (WidgetTester tester) async {
     await HttpOverrides.runZoned(() async {
       when(mockResponse.statusCode).thenReturn(200);
+      when(mockResponse.compressionState).thenReturn(HttpClientResponseCompressionState.notCompressed);
       final GlobalKey key = GlobalKey();
       await tester.pumpWidget(
         MediaQuery(
@@ -405,6 +491,27 @@ void main() {
     await _checkWidgetAndGolden(key, 'flutter_logo.string.color_filter.png');
   });
 
+
+  testWidgets('SvgPicture colorFilter - flutter logo - BlendMode.color',
+      (WidgetTester tester) async {
+    final GlobalKey key = GlobalKey();
+    await tester.pumpWidget(
+      RepaintBoundary(
+        key: key,
+        child: SvgPicture.string(
+          svgStr,
+          width: 100.0,
+          height: 100.0,
+          color: const Color(0xFF990000),
+          colorBlendMode: BlendMode.color,
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    await _checkWidgetAndGolden(key, 'flutter_logo.string.color_filter.blendmode_color.png');
+  });
+
   testWidgets('SvgPicture colorFilter with text', (WidgetTester tester) async {
     const String svgData =
         '''<svg font-family="arial" font-size="14" height="160" width="88" xmlns="http://www.w3.org/2000/svg">
@@ -455,6 +562,147 @@ void main() {
       ),
     ));
     expect(find.byType(SvgPicture), findsOneWidget);
+  });
+
+  testWidgets('SvgPicture.string respects clipBehavior',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(Directionality(
+      textDirection: TextDirection.ltr,
+      child: SvgPicture.string(svgStr),
+    ));
+    await tester.pumpAndSettle();
+
+    // Check that the render object has received the default clip behavior.
+    final RenderFittedBox renderObject =
+        tester.allRenderObjects.whereType<RenderFittedBox>().first;
+    expect(renderObject.clipBehavior, equals(Clip.hardEdge));
+
+    // Pump a new widget to check that the render object can update its clip
+    // behavior.
+    await tester.pumpWidget(
+      Directionality(
+        textDirection: TextDirection.ltr,
+        child: SvgPicture.string(svgStr, clipBehavior: Clip.antiAlias),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(renderObject.clipBehavior, equals(Clip.antiAlias));
+  });
+
+  testWidgets('SvgPicture.asset respects clipBehavior',
+      (WidgetTester tester) async {
+    final MockAssetBundle mockAsset = MockAssetBundle();
+    when(mockAsset.loadString('test.svg'))
+        .thenAnswer((_) => Future<String>.value(svgStr));
+
+    await tester.pumpWidget(Directionality(
+      textDirection: TextDirection.ltr,
+      child: SvgPicture.asset(
+        'test.svg',
+        bundle: mockAsset,
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    // Check that the render object has received the default clip behavior.
+    final RenderFittedBox renderObject =
+        tester.allRenderObjects.whereType<RenderFittedBox>().first;
+    expect(renderObject.clipBehavior, equals(Clip.hardEdge));
+
+    // Pump a new widget to check that the render object can update its clip
+    // behavior.
+    await tester.pumpWidget(
+      Directionality(
+        textDirection: TextDirection.ltr,
+        child: SvgPicture.asset(
+          'test.svg',
+          bundle: mockAsset,
+          clipBehavior: Clip.antiAlias,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(renderObject.clipBehavior, equals(Clip.antiAlias));
+  });
+
+  testWidgets('SvgPicture.memory respects clipBehavior',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(Directionality(
+      textDirection: TextDirection.ltr,
+      child: SvgPicture.memory(svgBytes),
+    ));
+    await tester.pumpAndSettle();
+
+    // Check that the render object has received the default clip behavior.
+    final RenderFittedBox renderObject =
+        tester.allRenderObjects.whereType<RenderFittedBox>().first;
+    expect(renderObject.clipBehavior, equals(Clip.hardEdge));
+
+    // Pump a new widget to check that the render object can update its clip
+    // behavior.
+    await tester.pumpWidget(
+      Directionality(
+        textDirection: TextDirection.ltr,
+        child: SvgPicture.memory(svgBytes, clipBehavior: Clip.antiAlias),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(renderObject.clipBehavior, equals(Clip.antiAlias));
+  });
+
+  testWidgets('SvgPicture.network respects clipBehavior',
+      (WidgetTester tester) async {
+    await HttpOverrides.runZoned(() async {
+      when(mockResponse.statusCode).thenReturn(200);
+
+      await tester.pumpWidget(
+        Directionality(
+          textDirection: TextDirection.ltr,
+          child: SvgPicture.network('test.svg'),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Check that the render object has received the default clip behavior.
+      final RenderFittedBox renderObject =
+          tester.allRenderObjects.whereType<RenderFittedBox>().first;
+      expect(renderObject.clipBehavior, equals(Clip.hardEdge));
+
+      // Pump a new widget to check that the render object can update its clip
+      // behavior.
+      await tester.pumpWidget(
+        Directionality(
+          textDirection: TextDirection.ltr,
+          child: SvgPicture.network('test.svg', clipBehavior: Clip.antiAlias),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(renderObject.clipBehavior, equals(Clip.antiAlias));
+    }, createHttpClient: (SecurityContext c) => mockHttpClient);
+  });
+
+  testWidgets('SvgPicture respects clipBehavior', (WidgetTester tester) async {
+    await tester.pumpWidget(Directionality(
+      textDirection: TextDirection.ltr,
+      child: SvgPicture.string(svgStr),
+    ));
+    await tester.pumpAndSettle();
+
+    // Check that the render object has received the default clip behavior.
+    final RenderFittedBox renderObject =
+        tester.allRenderObjects.whereType<RenderFittedBox>().first;
+    expect(renderObject.clipBehavior, equals(Clip.hardEdge));
+
+    // Pump a new widget to check that the render object can update its clip
+    // behavior.
+    await tester.pumpWidget(
+      Directionality(
+        textDirection: TextDirection.ltr,
+        child: SvgPicture.string(svgStr, clipBehavior: Clip.antiAlias),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(renderObject.clipBehavior, equals(Clip.antiAlias));
   });
 }
 

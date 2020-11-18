@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'dart:ui' show Picture;
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart' show AssetBundle;
 import 'package:flutter/widgets.dart';
 
@@ -211,6 +212,8 @@ class SvgPicture extends StatefulWidget {
     this.placeholderBuilder,
     this.semanticsLabel,
     this.excludeFromSemantics = false,
+    this.clipBehavior = Clip.hardEdge,
+    this.colorFilter,
   }) : super(key: key);
 
   /// Instantiates a widget that renders an SVG picture from an [AssetBundle].
@@ -306,14 +309,16 @@ class SvgPicture extends StatefulWidget {
     BlendMode colorBlendMode = BlendMode.srcIn,
     this.semanticsLabel,
     this.excludeFromSemantics = false,
+    this.clipBehavior = Clip.hardEdge,
   })  : pictureProvider = ExactAssetPicture(
-            allowDrawingOutsideViewBox == true
-                ? svgStringDecoderOutsideViewBox
-                : svgStringDecoder,
-            assetName,
-            bundle: bundle,
-            package: package,
-            colorFilter: _getColorFilter(color, colorBlendMode)),
+          allowDrawingOutsideViewBox == true
+              ? svgStringDecoderOutsideViewBox
+              : svgStringDecoder,
+          assetName,
+          bundle: bundle,
+          package: package,
+        ),
+        colorFilter = _getColorFilter(color, colorBlendMode),
         super(key: key);
 
   /// Creates a widget that displays a [PictureStream] obtained from the network.
@@ -360,13 +365,15 @@ class SvgPicture extends StatefulWidget {
     BlendMode colorBlendMode = BlendMode.srcIn,
     this.semanticsLabel,
     this.excludeFromSemantics = false,
+    this.clipBehavior = Clip.hardEdge,
   })  : pictureProvider = NetworkPicture(
-            allowDrawingOutsideViewBox == true
-                ? svgByteDecoderOutsideViewBox
-                : svgByteDecoder,
-            url,
-            headers: headers,
-            colorFilter: _getColorFilter(color, colorBlendMode)),
+          allowDrawingOutsideViewBox == true
+              ? svgByteDecoderOutsideViewBox
+              : svgByteDecoder,
+          url,
+          headers: headers,
+        ),
+        colorFilter = _getColorFilter(color, colorBlendMode),
         super(key: key);
 
   /// Creates a widget that displays a [PictureStream] obtained from a [File].
@@ -410,12 +417,14 @@ class SvgPicture extends StatefulWidget {
     BlendMode colorBlendMode = BlendMode.srcIn,
     this.semanticsLabel,
     this.excludeFromSemantics = false,
+    this.clipBehavior = Clip.hardEdge,
   })  : pictureProvider = FilePicture(
-            allowDrawingOutsideViewBox == true
-                ? svgByteDecoderOutsideViewBox
-                : svgByteDecoder,
-            file,
-            colorFilter: _getColorFilter(color, colorBlendMode)),
+          allowDrawingOutsideViewBox == true
+              ? svgByteDecoderOutsideViewBox
+              : svgByteDecoder,
+          file,
+        ),
+        colorFilter = _getColorFilter(color, colorBlendMode),
         super(key: key);
 
   /// Creates a widget that displays a [PictureStream] obtained from a [Uint8List].
@@ -456,12 +465,14 @@ class SvgPicture extends StatefulWidget {
     BlendMode colorBlendMode = BlendMode.srcIn,
     this.semanticsLabel,
     this.excludeFromSemantics = false,
+    this.clipBehavior = Clip.hardEdge,
   })  : pictureProvider = MemoryPicture(
-            allowDrawingOutsideViewBox == true
-                ? svgByteDecoderOutsideViewBox
-                : svgByteDecoder,
-            bytes,
-            colorFilter: _getColorFilter(color, colorBlendMode)),
+          allowDrawingOutsideViewBox == true
+              ? svgByteDecoderOutsideViewBox
+              : svgByteDecoder,
+          bytes,
+        ),
+        colorFilter = _getColorFilter(color, colorBlendMode),
         super(key: key);
 
   /// Creates a widget that displays a [PictureStream] obtained from a [String].
@@ -502,12 +513,14 @@ class SvgPicture extends StatefulWidget {
     BlendMode colorBlendMode = BlendMode.srcIn,
     this.semanticsLabel,
     this.excludeFromSemantics = false,
+    this.clipBehavior = Clip.hardEdge,
   })  : pictureProvider = StringPicture(
-            allowDrawingOutsideViewBox == true
-                ? svgStringDecoderOutsideViewBox
-                : svgStringDecoder,
-            bytes,
-            colorFilter: _getColorFilter(color, colorBlendMode)),
+          allowDrawingOutsideViewBox == true
+              ? svgStringDecoderOutsideViewBox
+              : svgStringDecoder,
+          bytes,
+        ),
+        colorFilter = _getColorFilter(color, colorBlendMode),
         super(key: key);
 
   /// The default placeholder for a SVG that may take time to parse or
@@ -600,6 +613,17 @@ class SvgPicture extends StatefulWidget {
   /// Useful for pictures which do not contribute meaningful information to an
   /// application.
   final bool excludeFromSemantics;
+
+  /// The content will be clipped (or not) according to this option.
+  ///
+  /// See the enum [Clip] for details of all possible options and their common
+  /// use cases.
+  ///
+  /// Defaults to [Clip.hardEdge], and must not be null.
+  final Clip clipBehavior;
+
+  /// The color filter, if any, to apply to this widget.
+  final ColorFilter colorFilter;
 
   @override
   State<SvgPicture> createState() => _SvgPictureState();
@@ -703,6 +727,16 @@ class _SvgPictureState extends State<SvgPicture> {
       );
     }
 
+    Widget _maybeWrapColorFilter(Widget child) {
+      if (widget.colorFilter == null) {
+        return child;
+      }
+      return _UnboundedColorFiltered(
+        colorFilter: widget.colorFilter,
+        child: child,
+      );
+    }
+
     if (_picture != null) {
       final Rect viewport = Offset.zero & _picture.viewport.size;
 
@@ -718,18 +752,21 @@ class _SvgPictureState extends State<SvgPicture> {
       }
 
       return _maybeWrapWithSemantics(
-        SizedBox(
-          width: width,
-          height: height,
-          child: FittedBox(
-            fit: widget.fit,
-            alignment: widget.alignment,
-            child: SizedBox.fromSize(
-              size: viewport.size,
-              child: RawPicture(
-                _picture,
-                matchTextDirection: widget.matchTextDirection,
-                allowDrawingOutsideViewBox: widget.allowDrawingOutsideViewBox,
+        _maybeWrapColorFilter(
+          SizedBox(
+            width: width,
+            height: height,
+            child: FittedBox(
+              fit: widget.fit,
+              alignment: widget.alignment,
+              clipBehavior: widget.clipBehavior,
+              child: SizedBox.fromSize(
+                size: viewport.size,
+                child: RawPicture(
+                  _picture,
+                  matchTextDirection: widget.matchTextDirection,
+                  allowDrawingOutsideViewBox: widget.allowDrawingOutsideViewBox,
+                ),
               ),
             ),
           ),
@@ -759,5 +796,53 @@ class _SvgPictureState extends State<SvgPicture> {
     description.add(
       DiagnosticsProperty<PictureStream>('stream', _pictureStream),
     );
+  }
+}
+
+class _UnboundedColorFiltered extends SingleChildRenderObjectWidget {
+  const _UnboundedColorFiltered({
+    Key key,
+    @required this.colorFilter,
+    @required Widget child,
+  }) : super(key: key, child: child);
+
+  final ColorFilter colorFilter;
+
+  @override
+  _UnboundedColorFilteredRenderBox createRenderObject(BuildContext context) =>
+      _UnboundedColorFilteredRenderBox(colorFilter);
+
+  @override
+  void updateRenderObject(
+    BuildContext context,
+    covariant _UnboundedColorFilteredRenderBox renderObject,
+  ) {
+    renderObject.colorFilter = colorFilter;
+  }
+}
+
+class _UnboundedColorFilteredRenderBox extends RenderProxyBox {
+  _UnboundedColorFilteredRenderBox(
+    this._colorFilter,
+  );
+
+  ColorFilter _colorFilter;
+  ColorFilter get colorFilter => _colorFilter;
+  set colorFilter(ColorFilter value) {
+    if (value == _colorFilter) {
+      return;
+    }
+    _colorFilter = value;
+    markNeedsPaint();
+  }
+
+  @override
+  void paint(PaintingContext context, Offset offset) {
+    final Paint paint = Paint()..colorFilter = colorFilter;
+    context.canvas.saveLayer(offset & size, paint);
+    if (child != null) {
+      context.paintChild(child, offset);
+    }
+    context.canvas.restore();
   }
 }
