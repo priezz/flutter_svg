@@ -44,10 +44,15 @@ class Svg {
     String key,
   ) async {
     final DrawableRoot svgRoot = await fromSvgBytes(raw, key);
+    if (svgRoot == null) {
+      return null;
+    }
+
     final Picture pic = svgRoot.toPicture(
       clipToViewBox: allowDrawingOutsideOfViewBox == true ? false : true,
       colorFilter: colorFilter,
     );
+
     return PictureInfo(
       picture: pic,
       viewport: svgRoot.viewport.viewBoxRect,
@@ -71,6 +76,10 @@ class Svg {
       ColorFilter colorFilter,
       String key) async {
     final DrawableRoot svg = await fromSvgString(raw, key);
+    if (svg == null) {
+      return null;
+    }
+
     return PictureInfo(
       picture: svg.toPicture(
         clipToViewBox: allowDrawingOutsideOfViewBox == true ? false : true,
@@ -668,8 +677,10 @@ class _SvgPictureState extends State<SvgPicture> {
   }
 
   void _handleImageChanged(PictureInfo imageInfo, bool synchronousCall) {
-    if(mounted) {
-      setState(() {_picture = imageInfo;});
+    if (mounted) {
+      setState(() {
+        _picture = imageInfo;
+      });
     }
   }
 

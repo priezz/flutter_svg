@@ -25,6 +25,10 @@ class Avd {
       ColorFilter colorFilter,
       String key) async {
     final DrawableRoot avdRoot = await fromAvdBytes(raw, key);
+    if (avdRoot == null) {
+      return null;
+    }
+
     final Picture pic = avdRoot.toPicture(
         clipToViewBox: allowDrawingOutsideOfViewBox == true ? false : true,
         colorFilter: colorFilter);
@@ -38,6 +42,10 @@ class Avd {
     String key,
   ) async {
     final DrawableRoot avd = fromAvdString(raw, key);
+    if (avd == null) {
+      return null;
+    }
+
     return PictureInfo(
       picture: avd.toPicture(
           clipToViewBox: allowDrawingOutsideOfViewBox == true ? false : true,
