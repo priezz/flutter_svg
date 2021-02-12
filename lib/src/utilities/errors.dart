@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 /// Reports a missing or undefined `<defs>` element.
-void reportMissingDef(String href, String methodName) {
+void reportMissingDef(String? href, String methodName) {
   if (kDebugMode) {
     print(
       '[FLUTTER_SVG] ERROR: Failed to find definition for $href.\n'
